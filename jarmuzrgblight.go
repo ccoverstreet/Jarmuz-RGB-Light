@@ -31,6 +31,7 @@ const defaultConfig = `{
 	}
 }
 `
+
 type jmodConfig struct {
 	Instances map[string]instanceData `json:"instances"`
 }
@@ -39,11 +40,18 @@ type instanceData struct {
 	LightIPs []string `json:"lightIPs"`
 }
 
+// -------------------- GLOBALS --------------------
 var globalConfig jmodConfig
+var globalJMODKey string
+// -------------------- END GLOBALS --------------------
 
 func main() {
 	http.HandleFunc("/webComponent", WebComponentHandler)
 	http.HandleFunc("/instanceData", InstanceDataHandler)
+
+	// Get passed jmodKey. Used for authenticating jmods with Jablko
+	globalJMODKey = os.Getenv("JABLKO_MOD_KEY")
+	log.Println(globalJMODKey)
 
 	// Get Passed config daata
 	initConfig()
@@ -87,6 +95,12 @@ func loadDefaultConfig() {
 		log.Printf("FATAL ERROR: Default config is invalid")
 		panic(err)
 	}
+}
+
+// This function sends a JSON of the current config to Jablko
+// which then triggers a config save on Jablko.
+func saveConfig() {
+
 }
 
 func WebComponentHandler(w http.ResponseWriter, r *http.Request) {
