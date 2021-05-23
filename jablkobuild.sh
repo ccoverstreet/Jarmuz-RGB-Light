@@ -1,3 +1,3 @@
 #!/bin/bash
 
-go build -o jarmuzrgblight .
+go build -o jablkomod .
