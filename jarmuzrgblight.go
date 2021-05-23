@@ -8,15 +8,14 @@ module is to serve as a demo for the full development chain
 of Jablko.
 */
 
-
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"net/http"
-	"encoding/json"
+	"os"
 
 	"io/ioutil"
 )
@@ -43,6 +42,7 @@ type instanceData struct {
 // -------------------- GLOBALS --------------------
 var globalConfig jmodConfig
 var globalJMODKey string
+
 // -------------------- END GLOBALS --------------------
 
 func main() {
@@ -61,7 +61,7 @@ func main() {
 	port := os.Getenv("JABLKO_MOD_PORT")
 	log.Printf("Jablko Mod Port: %s", port)
 
-	http.ListenAndServe(":" + port, nil)
+	http.ListenAndServe(":"+port, nil)
 }
 
 func initConfig() {
@@ -75,12 +75,6 @@ func initConfig() {
 		loadDefaultConfig()
 		// Should also send a request to Jablko with updated config
 		return
-
-		err := json.Unmarshal([]byte(defaultConfig), &globalConfig)
-		if err != nil {
-			log.Printf("FATAL ERROR: Default config is invalid")
-			panic(err)
-		}
 	}
 
 	err := json.Unmarshal([]byte(confStr), &globalConfig)
@@ -110,8 +104,7 @@ func WebComponentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Not Implemented")
-	fmt.Fprintf(w, "%s", b);
+	fmt.Fprintf(w, "%s", b)
 }
 
 func InstanceDataHandler(w http.ResponseWriter, r *http.Request) {
@@ -123,5 +116,5 @@ func InstanceDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println("Not Implemented")
-	fmt.Fprintf(w, `%s`, b);
+	fmt.Fprintf(w, `%s`, b)
 }
