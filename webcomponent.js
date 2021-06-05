@@ -18,6 +18,7 @@ class extends HTMLElement {
 			<path d="M60,60 A240,240,0,0,1,300,300" stroke="var(--clr-accent)" stroke-width="30" stroke-linecap="round" fill="transparent"/>
 		</svg>
 	</div>
+	<hr>
 	<div class="jmod-body">
 		<div id="debug-out">
 		</div>
