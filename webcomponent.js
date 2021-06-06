@@ -12,10 +12,9 @@ class extends HTMLElement {
 	<div class="jmod-header" style="display:flex">
 		<h1>RGB Light</h1>
 		<svg viewBox="0 0 360 360">
-			<path d="M60,240 A60,60,0,0,1,120,300" stroke="var(--clr-accent)" stroke-width="30" stroke-linecap="round" fill="transparent"/>
-			<path d="M60,180 A120,120,0,0,1,180,300" stroke="var(--clr-accent)" stroke-width="30" stroke-linecap="round" fill="transparent"/>
-			<path d="M60,120 A180,180,0,0,1,240,300" stroke="var(--clr-accent)" stroke-width="30" stroke-linecap="round" fill="transparent"/>
-			<path d="M60,60 A240,240,0,0,1,300,300" stroke="var(--clr-accent)" stroke-width="30" stroke-linecap="round" fill="transparent"/>
+			<path d="M150,300 A30,60,0,0,1,210,300" stroke="var(--clr-accent)" stroke-width="30" stroke-linecap="round" fill="transparent"/>
+			<path d="M105,300 A60,90,0,0,1,255,300" stroke="var(--clr-accent)" stroke-width="30" stroke-linecap="round" fill="transparent"/>
+			<path d="M60,300 A60,80,0,0,1,300,300" stroke="var(--clr-accent)" stroke-width="30" stroke-linecap="round" fill="transparent"/>
 		</svg>
 	</div>
 	<hr>
