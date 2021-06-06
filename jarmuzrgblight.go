@@ -115,6 +115,5 @@ func InstanceDataHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Unable to generate JSON string for instances: %v", err)
 		return
 	}
-	fmt.Println("Not Implemented")
 	fmt.Fprintf(w, `%s`, b)
 }
