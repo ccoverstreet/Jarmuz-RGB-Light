@@ -11,6 +11,7 @@ of Jablko.
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -42,6 +43,8 @@ type instanceData struct {
 // -------------------- GLOBALS --------------------
 var globalConfig jmodConfig
 var globalJMODKey string
+var globalJMODPort string
+var globalJablkoCorePort string
 
 // -------------------- END GLOBALS --------------------
 
@@ -51,17 +54,17 @@ func main() {
 
 	// Get passed jmodKey. Used for authenticating jmods with Jablko
 	globalJMODKey = os.Getenv("JABLKO_MOD_KEY")
-	log.Println(globalJMODKey)
+	globalJablkoCorePort = os.Getenv("JABLKO_CORE_PORT")
+	globalJMODPort = os.Getenv("JABLKO_MOD_PORT")
 
 	// Get Passed config daata
 	initConfig()
 	log.Println(globalConfig)
 
 	// Get port to start HTTP server
-	port := os.Getenv("JABLKO_MOD_PORT")
-	log.Printf("Jablko Mod Port: %s", port)
+	log.Printf("Jablko Mod Port: %s", globalJablkoCorePort)
 
-	http.ListenAndServe(":"+port, nil)
+	http.ListenAndServe(":"+globalJMODPort, nil)
 }
 
 func initConfig() {
@@ -70,7 +73,7 @@ func initConfig() {
 
 	// Check if config was provided. Replace confStr with default
 	// if not.
-	if confStr == "" {
+	if len(confStr) < 3 {
 		log.Println("No config provided. Starting with default config")
 		loadDefaultConfig()
 		// Should also send a request to Jablko with updated config
@@ -89,12 +92,33 @@ func loadDefaultConfig() {
 		log.Printf("FATAL ERROR: Default config is invalid")
 		panic(err)
 	}
+
+	saveConfig()
 }
 
 // This function sends a JSON of the current config to Jablko
 // which then triggers a config save on Jablko.
 func saveConfig() {
+	configBytes, err := json.Marshal(globalConfig)
+	if err != nil {
+		log.Printf("Unable to marshal config: %v", err)
+		return
+	}
 
+	client := &http.Client{}
+
+	req, err := http.NewRequest("POST", "http://localhost:"+globalJablkoCorePort+"/service/saveConfig", bytes.NewBuffer(configBytes))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	req.Header.Add("JMOD-KEY", globalJMODKey)
+	req.Header.Add("JMOD-PORT", globalJMODPort)
+
+	log.Println(globalJMODPort)
+
+	client.Do(req)
 }
 
 func WebComponentHandler(w http.ResponseWriter, r *http.Request) {
