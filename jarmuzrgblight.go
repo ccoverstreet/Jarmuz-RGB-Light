@@ -64,7 +64,7 @@ func main() {
 	// Get port to start HTTP server
 	log.Printf("Jablko Mod Port: %s", globalJablkoCorePort)
 
-	http.ListenAndServe(":"+globalJMODPort, nil)
+	log.Println(http.ListenAndServe(":"+globalJMODPort, nil))
 }
 
 func initConfig() {
