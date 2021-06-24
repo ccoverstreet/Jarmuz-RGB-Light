@@ -48,10 +48,29 @@ class extends HTMLElement {
 		<p>This will have sliders for controlling the color and a selector for which lights to send the set command to</p>
 
 		<div id="slider_holder">
-			<input type="range" id="slider_r" hmin="0" max="255" value="120" oninput="this.getRootNode().host.sliderUpdate('r', parseInt(this.value, 10))" style="left: -10%;"></input>
-			<input type="range" id="slider_g" hmin="0" max="255" value="120" oninput="this.getRootNode().host.sliderUpdate('g', parseInt(this.value, 10))" style="left: 15%; background-color: var(--clr-green);"></input>
-			<input type="range" id="slider_b" hmin="0" max="255" value="120" oninput="this.getRootNode().host.sliderUpdate('b', parseInt(this.value, 10))" style="left: 40%; background-color: var(--clr-blue);"></input>
-			<input type="range" id="slider_a" hmin="0" max="255" value="120" oninput="this.getRootNode().host.sliderUpdate('a', parseInt(this.value, 10))" style="left: 70%; background-color: var(--clr-font-med);"></input>
+			<input type="range" id="slider_r" hmin="0" max="255" value="120"
+				oninput="this.getRootNode().host.sliderUpdate('r', parseInt(this.value, 10))"
+				onchange="this.getRootNode().host.sliderUpdate('r', parseInt(this.value, 10))"
+				style="left: -10%;">
+			</input>
+
+			<input type="range" id="slider_g" hmin="0" max="255" value="120"
+				oninput="this.getRootNode().host.sliderUpdate('g', parseInt(this.value, 10))"
+				onchange="this.getRootNode().host.sliderUpdate('g', parseInt(this.value, 10))"
+				style="left: 15%; background-color: var(--clr-green);">
+			</input>
+
+			<input type="range" id="slider_b" hmin="0" max="255" value="120"
+				oninput="this.getRootNode().host.sliderUpdate('b', parseInt(this.value, 10))"
+				onchange="this.getRootNode().host.sliderUpdate('b', parseInt(this.value, 10))"
+				style="left: 40%; background-color: var(--clr-blue);">
+			</input>
+
+			<input type="range" id="slider_a" hmin="0" max="255" value="120"
+				oninput="this.getRootNode().host.sliderUpdate('a', parseInt(this.value, 10))"
+				onchange="this.getRootNode().host.sliderUpdate('a', parseInt(this.value, 10))"
+				style="left: 70%; background-color: var(--clr-font-med);">
+			</input>
 		</div>
 	</div>
 </div>
@@ -62,6 +81,8 @@ class extends HTMLElement {
 		this.source = source;
 		this.instName = instName;
 		this.config = config;
+		this.lastMessageTime = performance.now();
+
 		this.socket = new WebSocket(`ws://${document.location.host}/jmod/socket?JMOD-Source=${this.source}`);
 
 		const elem = this.shadowRoot.getElementById("debug-out");
@@ -76,6 +97,14 @@ class extends HTMLElement {
 	}
 
 	setRGBA() {
+		// Rate limiting to 10 Hz
+		var curTime = performance.now();
+		if (curTime - this.lastMessageTime < 100) {
+			return 
+		}
+
+		this.lastMessageTime = curTime
+
 		this.socket.send(`${this.config.lightIPs[1]},${this.r},${this.g},${this.b},${this.a}`);
 		console.log(this.r, this.g, this.b, this.a);
 	}

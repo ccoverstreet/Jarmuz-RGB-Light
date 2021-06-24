@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -148,16 +149,49 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
+	connMap := make(map[string]*net.UDPConn)
+
 	log.Println("Websocket connection established")
 	for {
-		_, message, err := conn.ReadMessage()
+		messageType, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Printf("ERROR: Error reading WebSocket message - %v", err)
+			conn.WriteMessage(messageType, []byte(err.Error()))
 			return
 		}
 
 		sliceEnd := strings.Index(string(message), ",")
-		log.Println(string(message[:sliceEnd]))
+		rawAddr := string(message[:sliceEnd]) + ":4123"
 
+		if light, ok := connMap[rawAddr]; ok {
+			_, err := light.Write(message[sliceEnd+1:])
+			if err != nil {
+				log.Printf("ERROR: Unable to write message to light - %v", err)
+				return
+			}
+		} else {
+			// Resolve Address
+			resAddr, err := net.ResolveUDPAddr("udp", rawAddr)
+			if err != nil {
+				log.Printf("ERROR: Unable to resolve UDP address of light - %v", err)
+				conn.WriteMessage(messageType, []byte(err.Error()))
+				return
+			}
+
+			light, err := net.DialUDP("udp", nil, resAddr)
+			if err != nil {
+				log.Printf("ERROR: Unable to dial UDP address - %v", err)
+				conn.WriteMessage(messageType, []byte(err.Error()))
+				return
+			}
+
+			connMap[rawAddr] = light
+
+			_, err = light.Write(message[sliceEnd+1:])
+			if err != nil {
+				log.Printf("ERROR: Unable to write message to light - %v", err)
+				return
+			}
+		}
 	}
 }
