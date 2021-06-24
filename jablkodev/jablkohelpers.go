@@ -5,7 +5,7 @@
 // Helper file for developing Jablko Applications. This file contains
 // standardized functions for use in JMODs.
 
-package main
+package jablkodev
 
 import (
 	"bytes"
