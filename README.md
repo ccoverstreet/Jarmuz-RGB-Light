@@ -5,4 +5,4 @@ A Jablko Mod (JMOD) for [ccoverstreet/Jablko](https://github.com/ccoverstreet/Ja
 
 ## Status
 
-This mod is the first test for using the upcoming Jablko 0.3.0 framework. The actual ESP8266 based UDP clients haven't been designed yet and Jablko still needs some polishing and API documentation before this is ready for any form of release.
+This mod is the first test for using the upcoming Jablko 0.3.0 framework. Design is underway!
