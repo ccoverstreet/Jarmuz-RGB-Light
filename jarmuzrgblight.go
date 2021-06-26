@@ -17,6 +17,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -160,17 +161,18 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		sliceEnd := strings.Index(string(message), ",")
-		rawAddr := string(message[:sliceEnd]) + ":4123"
+		splitMessage := strings.Split(string(message), ",")
+		if len(splitMessage) != 5 {
+			log.Println("ERROR: Message is not of length 5")
+			conn.WriteMessage(messageType, []byte("Message is not of length 5"))
+			continue
+		}
 
-		if light, ok := connMap[rawAddr]; ok {
-			_, err := light.Write(message[sliceEnd+1:])
-			if err != nil {
-				log.Printf("ERROR: Unable to write message to light - %v", err)
-				return
-			}
-		} else {
-			// Resolve Address
+		rawAddr := splitMessage[0] + ":4123"
+
+		// Check if connection already exists
+		// If not, resolve the address and cache it
+		if _, ok := connMap[rawAddr]; !ok {
 			resAddr, err := net.ResolveUDPAddr("udp", rawAddr)
 			if err != nil {
 				log.Printf("ERROR: Unable to resolve UDP address of light - %v", err)
@@ -186,12 +188,29 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			connMap[rawAddr] = light
-
-			_, err = light.Write(message[sliceEnd+1:])
-			if err != nil {
-				log.Printf("ERROR: Unable to write message to light - %v", err)
-				return
-			}
 		}
+
+		outBuf := [4]byte{0}
+
+		// Write to light
+		for i := 1; i < 5; i++ {
+			val, err := strconv.Atoi(splitMessage[i])
+			if err != nil {
+				log.Printf("ERROR: Unable to convert to int - %v", err)
+				conn.WriteMessage(messageType, []byte(err.Error()))
+				continue
+			}
+
+			outBuf[i-1] = byte(val)
+		}
+
+		_, err = connMap[rawAddr].Write(outBuf[:])
+
+		if err != nil {
+			log.Printf("ERROR: Unable to write to light - %v", err)
+			conn.WriteMessage(messageType, []byte(err.Error()))
+			continue
+		}
+
 	}
 }
