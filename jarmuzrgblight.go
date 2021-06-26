@@ -11,14 +11,20 @@ of Jablko.
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
+	"sync"
 
 	"io/ioutil"
+
+	"github.com/ccoverstreet/Jarmuz-RGB-Light/jablkodev"
+	"github.com/gorilla/websocket"
 )
 
 const defaultConfig = `{
@@ -33,6 +39,7 @@ const defaultConfig = `{
 `
 
 type jmodConfig struct {
+	sync.RWMutex
 	Instances map[string]instanceData `json:"instances"`
 }
 
@@ -49,9 +56,6 @@ var globalJablkoCorePort string
 // -------------------- END GLOBALS --------------------
 
 func main() {
-	http.HandleFunc("/webComponent", WebComponentHandler)
-	http.HandleFunc("/instanceData", InstanceDataHandler)
-
 	// Get passed jmodKey. Used for authenticating jmods with Jablko
 	globalJMODKey = os.Getenv("JABLKO_MOD_KEY")
 	globalJablkoCorePort = os.Getenv("JABLKO_CORE_PORT")
@@ -61,8 +65,10 @@ func main() {
 	initConfig()
 	log.Println(globalConfig)
 
-	// Get port to start HTTP server
-	log.Printf("Jablko Mod Port: %s", globalJablkoCorePort)
+	// Handles called by Jablko
+	http.HandleFunc("/webComponent", WebComponentHandler)
+	http.HandleFunc("/instanceData", InstanceDataHandler)
+	http.HandleFunc("/jmod/socket", SocketHandler)
 
 	log.Println(http.ListenAndServe(":"+globalJMODPort, nil))
 }
@@ -105,20 +111,10 @@ func saveConfig() {
 		return
 	}
 
-	client := &http.Client{}
-
-	req, err := http.NewRequest("POST", "http://localhost:"+globalJablkoCorePort+"/service/saveConfig", bytes.NewBuffer(configBytes))
+	err = jablkodev.JablkoSaveConfig(globalJablkoCorePort, globalJMODPort, globalJMODKey, configBytes)
 	if err != nil {
-		log.Println(err)
-		return
+		log.Printf("ERROR: Unable to save config - %v", err)
 	}
-
-	req.Header.Add("JMOD-KEY", globalJMODKey)
-	req.Header.Add("JMOD-PORT", globalJMODPort)
-
-	log.Println(globalJMODPort)
-
-	client.Do(req)
 }
 
 func WebComponentHandler(w http.ResponseWriter, r *http.Request) {
@@ -140,4 +136,81 @@ func InstanceDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, `%s`, b)
+}
+
+// WebSocketHandler
+var upgrader = websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }}
+
+func SocketHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Websocket handler called")
+
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("ERROR: Unable to upgrade WebSocket - %v", err)
+	}
+	defer conn.Close()
+
+	connMap := make(map[string]*net.UDPConn)
+
+	log.Println("Websocket connection established")
+	for {
+		messageType, message, err := conn.ReadMessage()
+		if err != nil {
+			log.Printf("ERROR: Error reading WebSocket message - %v", err)
+			conn.WriteMessage(messageType, []byte(err.Error()))
+			return
+		}
+
+		splitMessage := strings.Split(string(message), ",")
+		if len(splitMessage) != 5 {
+			log.Println("ERROR: Message is not of length 5")
+			conn.WriteMessage(messageType, []byte("Message is not of length 5"))
+			continue
+		}
+
+		rawAddr := splitMessage[0] + ":4123"
+
+		// Check if connection already exists
+		// If not, resolve the address and cache it
+		if _, ok := connMap[rawAddr]; !ok {
+			resAddr, err := net.ResolveUDPAddr("udp", rawAddr)
+			if err != nil {
+				log.Printf("ERROR: Unable to resolve UDP address of light - %v", err)
+				conn.WriteMessage(messageType, []byte(err.Error()))
+				return
+			}
+
+			light, err := net.DialUDP("udp", nil, resAddr)
+			if err != nil {
+				log.Printf("ERROR: Unable to dial UDP address - %v", err)
+				conn.WriteMessage(messageType, []byte(err.Error()))
+				return
+			}
+
+			connMap[rawAddr] = light
+		}
+
+		outBuf := [4]byte{0}
+
+		// Write to light
+		for i := 1; i < 5; i++ {
+			val, err := strconv.Atoi(splitMessage[i])
+			if err != nil {
+				log.Printf("ERROR: Unable to convert to int - %v", err)
+				conn.WriteMessage(messageType, []byte(err.Error()))
+				continue
+			}
+
+			outBuf[i-1] = byte(val)
+		}
+
+		_, err = connMap[rawAddr].Write(outBuf[:])
+
+		if err != nil {
+			log.Printf("ERROR: Unable to write to light - %v", err)
+			conn.WriteMessage(messageType, []byte(err.Error()))
+			continue
+		}
+
+	}
 }
