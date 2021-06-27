@@ -1,8 +1,10 @@
-run: jarmuzrgblight
-	./jarmuzrgblight
+out = jarmuzrgblight
+build_command = go build -o $(out) .
 
-jarmuzrgblight: *.go
-	go build -o jarmuzrgblight .
+run: $(out)
+	./$(out)
 
-build:
-	go build -o jarmuzrgblight .
+build: $(out)
+
+$(out): *.go *.js
+	$(build_command)

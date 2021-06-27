@@ -1,3 +1,10 @@
+// Jarmuz RGB Light Webcomponent
+// Cale Overstreet
+// Jun. 27, 2021
+
+/* UI component for Jablko. Interacts through WebSocket
+ */
+
 class extends HTMLElement {
 	constructor() {
 		super();
