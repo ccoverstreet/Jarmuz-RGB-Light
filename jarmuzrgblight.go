@@ -11,6 +11,7 @@ of Jablko.
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -20,8 +21,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
-	"io/ioutil"
 
 	"github.com/ccoverstreet/Jarmuz-RGB-Light/jablkodev"
 	"github.com/gorilla/websocket"
@@ -52,6 +51,9 @@ var globalConfig jmodConfig
 var globalJMODKey string
 var globalJMODPort string
 var globalJablkoCorePort string
+
+//go:embed webcomponent.js
+var webcomponentFile []byte
 
 // -------------------- END GLOBALS --------------------
 
@@ -118,13 +120,7 @@ func saveConfig() {
 }
 
 func WebComponentHandler(w http.ResponseWriter, r *http.Request) {
-	b, err := ioutil.ReadFile("./webcomponent.js")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "%s", b)
+	fmt.Fprintf(w, "%s", webcomponentFile)
 }
 
 func InstanceDataHandler(w http.ResponseWriter, r *http.Request) {
