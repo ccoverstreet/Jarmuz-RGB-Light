@@ -137,6 +137,9 @@ func InstanceDataHandler(w http.ResponseWriter, r *http.Request) {
 // WebSocketHandler
 var upgrader = websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }}
 
+// Main dashboard event handler
+// Parses WebSocket data into condensed UDP values
+// and sends packets to the target light
 func SocketHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Websocket handler called")
 
@@ -146,6 +149,9 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
+	// Populate map
+	// SHOULD BE ABLE TO POPULATE MAP THROUGH WEBSOCKET
+	// Maybe by sending requests of length 2
 	connMap := make(map[string]*net.UDPConn)
 
 	log.Println("Websocket connection established")
@@ -158,6 +164,7 @@ func SocketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		splitMessage := strings.Split(string(message), ",")
+
 		if len(splitMessage) != 5 {
 			log.Println("ERROR: Message is not of length 5")
 			conn.WriteMessage(messageType, []byte("Message is not of length 5"))
