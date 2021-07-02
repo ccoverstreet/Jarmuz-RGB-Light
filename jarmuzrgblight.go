@@ -27,19 +27,19 @@ import (
 )
 
 const defaultConfig = `{
-	"instances": {
-		"inst1": {
+	"instances": [
+		{
 			"lightIPs": [
 				"10.0.0.5"
 			]
 		}	
-	}
+	]
 }
 `
 
 type jmodConfig struct {
 	sync.RWMutex
-	Instances map[string]instanceData `json:"instances"`
+	Instances []instanceData `json:"instances"`
 }
 
 type instanceData struct {
