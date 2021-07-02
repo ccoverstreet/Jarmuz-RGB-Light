@@ -80,9 +80,8 @@ class extends HTMLElement {
 		`
 	}
 
-	init(source, instName, config) {
+	init(source, config) {
 		this.source = source;
-		this.instName = instName;
 		this.config = config;
 		this.lastMessageTime = performance.now();
 
